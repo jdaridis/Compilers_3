@@ -1,7 +1,5 @@
 import java.util.Map;
 
-import javax.swing.text.Style;
-
 import syntaxtree.AllocationExpression;
 import syntaxtree.AndExpression;
 import syntaxtree.ArrayAllocationExpression;
@@ -238,10 +236,22 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol expression = n.f2.accept(this, argu);
 
-        if(expression.type != PrimitiveType.BOOLEAN){
-            throw new TypeException(PrimitiveType.BOOLEAN.typeName, expression.getTypeName());
-            // throw new Exception("Only boolean expression allowed");
-        }
+        TypeSymbol thenLabel = Symbol.newLabel();
+        TypeSymbol elseLabel = Symbol.newLabel();
+        TypeSymbol next = Symbol.newLabel();
+
+        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, thenLabel, elseLabel);
+
+        System.out.printf("  %s:\n", thenLabel);
+        n.f4.accept(this, argu);
+        System.out.printf("\tbr label %%%s\n", next);
+
+        System.out.printf("  %s:\n", elseLabel);
+        n.f6.accept(this, argu);
+        System.out.printf("\tbr label %%%s\n", next);
+
+        System.out.printf("  %s:\n", next);
+
 
         return null;
     }
