@@ -1,7 +1,7 @@
 enum PrimitiveType {
-    INT("int", 4),
-    ARRAY("int[]", 8),
-    BOOLEAN("boolean", 1),
+    INT("i32", 4),
+    ARRAY("i32*", 8),
+    BOOLEAN("i1", 1),
     IDENTIFIER(8);
 
 
@@ -18,13 +18,13 @@ enum PrimitiveType {
     public static PrimitiveType strToPrimitiveType(String strType){
         PrimitiveType type;
         switch(strType){
-            case "int":
+            case "i32":
                 type = INT;
                 break;
-            case "boolean":
+            case "i1":
                 type = BOOLEAN;
                 break;
-            case "int[]":
+            case "i32*":
                 type = ARRAY;
                 break;
             default:
@@ -51,6 +51,8 @@ public class Symbol {
     String id;
     PrimitiveType type;
     int size;
+    static int tempCount = 0;
+    static int labelCount = 0;
     public Symbol(String id, PrimitiveType type) {
         this.id = id;
         this.type = type;
@@ -63,6 +65,21 @@ public class Symbol {
         this.size = type.size;
     }
 
+    public static TypeSymbol newTemp(){
+        TypeSymbol symbol = new TypeSymbol("%t"+tempCount);
+        tempCount++;
+        return symbol;
+    }
+
+    public static TypeSymbol newLabel(){
+        TypeSymbol symbol = new TypeSymbol("L"+labelCount);
+        labelCount++;
+        return symbol;
+    }
+    
+    public String getName() {
+        return id;
+    }
 
     @Override
     public String toString() {

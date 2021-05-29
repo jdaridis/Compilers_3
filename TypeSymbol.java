@@ -1,5 +1,10 @@
 public class TypeSymbol extends Symbol{
 
+
+    public TypeSymbol(String id, PrimitiveType type) {
+        super(id, type);
+    }
+
     public TypeSymbol(PrimitiveType type) {
         super(type.typeName, type);
     }
@@ -11,6 +16,13 @@ public class TypeSymbol extends Symbol{
     public String getTypeName(){
         return this.id;
     }
+
+    @Override
+    public String toString() {
+        return this.id;
+    }
+
+    
 
     
 }

@@ -387,15 +387,15 @@ public class DeclarationsVisitor extends GJDepthFirst<String, SymbolTable> {
 
     @Override
     public String visit(ArrayType n, SymbolTable argu) {
-        return "int[]";
+        return PrimitiveType.ARRAY.getTypeName();
     }
 
     public String visit(BooleanType n, SymbolTable argu) {
-        return "boolean";
+        return PrimitiveType.BOOLEAN.getTypeName();
     }
 
     public String visit(IntegerType n, SymbolTable argu) {
-        return "int";
+        return PrimitiveType.INT.getTypeName();
     }
 
     @Override

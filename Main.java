@@ -19,8 +19,6 @@ public class Main {
 
                 Goal root = parser.Goal();
 
-                System.err.println("Program parsed successfully.");
-
                 DeclarationsVisitor declarations = new DeclarationsVisitor();
                 SymbolTable symbolTable = new SymbolTable();
 
@@ -30,8 +28,12 @@ public class Main {
                 TypesVisitor typeCheck = new TypesVisitor();
 
                 root.accept(typeCheck, symbolTable);
+
+                GeneratorVisitor generator = new GeneratorVisitor(symbolTable);
+
+                root.accept(generator, false);
                 
-                for(Symbol s: symbolTable.peek().values()){
+                /* for(Symbol s: symbolTable.peek().values()){
                     ClassDeclSymbol classSym = (ClassDeclSymbol)s;
                     int fieldOffset = computeClassSize(classSym.parentClass, symbolTable);
                     int methodOffset = 0;
@@ -51,7 +53,7 @@ public class Main {
                         }
                         methodOffset += method.type.getSize();
                     }
-                }
+                } */
 
                 symbolTable.exit();
                 
