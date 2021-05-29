@@ -337,11 +337,12 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol expr1 = n.f0.accept(this, argu);
         TypeSymbol expr2 = n.f2.accept(this, argu);
 
-        if(expr1.type != PrimitiveType.INT || expr2.type != PrimitiveType.INT){
-            throw new Exception("Types must be integers");
-        }
+        TypeSymbol temp = Symbol.newTemp();
 
-        return new TypeSymbol(PrimitiveType.BOOLEAN);
+        System.out.printf("\t%s = icmp slt i32 %s, %s\n", temp, expr1, expr2);
+
+
+        return temp;
     }
 
     /**
@@ -359,7 +360,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol temp = Symbol.newTemp();
 
-        
+        System.out.printf("\t%s = add i32 %s, %s\n", temp, expr1, expr2);
 
 
         return temp;
@@ -378,11 +379,12 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol expr1 = n.f0.accept(this, argu);
         TypeSymbol expr2 = n.f2.accept(this, argu);
 
-        if(expr1.type != PrimitiveType.INT || expr2.type != PrimitiveType.INT){
-            throw new Exception("Types must be integers");
-        }
+        TypeSymbol temp = Symbol.newTemp();
 
-        return new TypeSymbol(PrimitiveType.INT);
+        System.out.printf("\t%s = sub i32 %s, %s\n", temp, expr1, expr2);
+
+
+        return temp;
     }
 
     /**
@@ -398,11 +400,12 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol expr1 = n.f0.accept(this, argu);
         TypeSymbol expr2 = n.f2.accept(this, argu);
 
-        if(expr1.type != PrimitiveType.INT || expr2.type != PrimitiveType.INT){
-            throw new Exception("Types must be integers");
-        }
+        TypeSymbol temp = Symbol.newTemp();
 
-        return new TypeSymbol(PrimitiveType.INT);
+        System.out.printf("\t%s = mul i32 %s, %s\n", temp, expr1, expr2);
+
+
+        return temp;
     }
 
         /**
@@ -574,12 +577,12 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         // TODO Auto-generated method stub
         TypeSymbol expr1 = n.f1.accept(this, argu);
 
-        if(expr1.type != PrimitiveType.BOOLEAN){
-            throw new TypeException(PrimitiveType.BOOLEAN.typeName, expr1.getTypeName());
-            // throw new Exception("Type must be boolean");
-        }
+        TypeSymbol temp = Symbol.newTemp();
 
-        return new TypeSymbol(PrimitiveType.BOOLEAN);
+        System.out.printf("\t%s = xor i1 %s, true\n", temp, expr1);
+
+
+        return temp;
     }
 
     /**
@@ -609,6 +612,10 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         if(type.type == PrimitiveType.IDENTIFIER){
             symbol = table.lookup(name);
+            if(symbol == null){
+                return type;
+            }
+
             if(symbol.type != PrimitiveType.IDENTIFIER){
 
                 String strType = symbol.type.getTypeName();
@@ -628,8 +635,6 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
             // }
         }
-
-
 
         return type;
     }
@@ -933,7 +938,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
     public TypeSymbol visit(Identifier n, Boolean argu) {
-        return new TypeSymbol("%" + n.f0.toString());
+        return new TypeSymbol("%_" + n.f0.toString());
     }
 
     
