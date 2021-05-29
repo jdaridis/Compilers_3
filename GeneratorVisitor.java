@@ -162,11 +162,9 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
     @Override
     public TypeSymbol visit(AssignmentStatement n, Boolean argu) throws Exception {
         String name = n.f0.accept(this, argu).getTypeName();
-
         Symbol symbol = table.lookupField(name);
 
         String expr = n.f2.accept(this, argu).toString();
-
         String type =  symbol.type.getTypeName();
 
         System.out.printf("\tstore %s %s, %s* %s\n", type, expr, type, name);
@@ -232,14 +230,11 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
     public TypeSymbol visit(IfStatement n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
-
-        TypeSymbol expression = n.f2.accept(this, argu);
-
         TypeSymbol thenLabel = Symbol.newLabel();
         TypeSymbol elseLabel = Symbol.newLabel();
         TypeSymbol next = Symbol.newLabel();
-
+        
+        TypeSymbol expression = n.f2.accept(this, argu);
         System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, thenLabel, elseLabel);
 
         System.out.printf("  %s:\n", thenLabel);
@@ -251,7 +246,6 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         System.out.printf("\tbr label %%%s\n", next);
 
         System.out.printf("  %s:\n", next);
-
 
         return null;
     }
@@ -267,12 +261,21 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
     public TypeSymbol visit(WhileStatement n, Boolean argu) throws Exception {
-        TypeSymbol expression = n.f2.accept(this, argu);
+        TypeSymbol condLabel = Symbol.newLabel();
+        TypeSymbol loopLabel = Symbol.newLabel();
+        TypeSymbol next = Symbol.newLabel();
 
-        if(expression.type != PrimitiveType.BOOLEAN){
-            throw new TypeException(PrimitiveType.BOOLEAN.typeName, expression.getTypeName());
-            // throw new Exception("Only boolean expression allowed");
-        }
+        System.out.printf("\tbr label %%%s\n", condLabel);
+        System.out.printf("  %s:\n", condLabel);
+        TypeSymbol expression = n.f2.accept(this, argu);
+        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, loopLabel, next);
+        
+        System.out.printf("  %s:\n", loopLabel);
+        n.f4.accept(this, argu);
+        System.out.printf("\tbr label %%%s\n", condLabel);
+
+
+        System.out.printf("  %s:\n", next);
 
         return null;
     }
@@ -350,7 +353,6 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol temp = Symbol.newTemp();
 
         System.out.printf("\t%s = icmp slt i32 %s, %s\n", temp, expr1, expr2);
-
 
         return temp;
     }
