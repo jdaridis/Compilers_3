@@ -110,8 +110,10 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         table.enter();
         super.visit(n, argu);
         table.exit();
-
         System.out.println("\tret i32 0");
+        System.out.printf("  OOB_LABEL:\n");
+        System.out.println("\tcall void @throw_oob()");
+        System.out.println("\tunreachable");
         System.out.println("}");
         return null;
     }
@@ -179,18 +181,13 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol length = Symbol.newTemp();
 
         TypeSymbol inBoundsLabel = Symbol.newLabel();
-        TypeSymbol outOfBoundsLabel = Symbol.newLabel();
         
         System.out.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", lengthPtr, name);
         System.out.printf("\t%s = load i32, i32* %s\n", length, lengthPtr);
         
         System.out.printf("\t%s = icmp slt i32 %s, %s\n", inBounds, index, length);
-        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", inBounds, inBoundsLabel, outOfBoundsLabel);
+        System.out.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", inBounds, inBoundsLabel);
         
-        System.out.printf("  %s:\n", outOfBoundsLabel);
-        System.out.println("\tcall void @throw_oob()");
-        System.out.printf("\tbr label %%%s\n", inBoundsLabel);
-
         System.out.printf("  %s:\n", inBoundsLabel);
     }
 
