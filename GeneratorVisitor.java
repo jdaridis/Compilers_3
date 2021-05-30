@@ -1,3 +1,4 @@
+import java.sql.Types;
 import java.util.Map;
 
 import syntaxtree.AllocationExpression;
@@ -172,6 +173,27 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         return null;
     }
 
+    void checkOutOfBounds(TypeSymbol name, TypeSymbol index){
+        TypeSymbol inBounds = Symbol.newTemp();
+        TypeSymbol lengthPtr = Symbol.newTemp();
+        TypeSymbol length = Symbol.newTemp();
+
+        TypeSymbol inBoundsLabel = Symbol.newLabel();
+        TypeSymbol outOfBoundsLabel = Symbol.newLabel();
+        
+        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", lengthPtr, name);
+        System.out.printf("\t%s = load i32, i32* %s\n", length, lengthPtr);
+        
+        System.out.printf("\t%s = icmp slt i32 %s, %s\n", inBounds, index, length);
+        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", inBounds, inBoundsLabel, outOfBoundsLabel);
+        
+        System.out.printf("  %s:\n", outOfBoundsLabel);
+        System.out.println("\tcall void @throw_oob()");
+        System.out.printf("\tbr label %%%s\n", inBoundsLabel);
+
+        System.out.printf("  %s:\n", inBoundsLabel);
+    }
+
     /**
      * Grammar production:
      * f0 -> Identifier()
@@ -185,35 +207,21 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
     public TypeSymbol visit(ArrayAssignmentStatement n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
-
-        String name = n.f0.accept(this, argu).getTypeName();
-
-        Symbol symbol = table.lookupField(name);
-
-        if(symbol == null){
-            throw new DeclarationException(name);
-            // throw new Exception("Next time, do us the favor and declare the variable " + name);
-        }
-
-        if(symbol.type != PrimitiveType.ARRAY){
-            throw new TypeException(PrimitiveType.ARRAY.typeName, symbol.type.getTypeName());
-            // throw new Exception("Type must be array. Was " + symbol.type.getTypeName());
-        }
-
+        TypeSymbol name = n.f0.accept(this, argu);
         TypeSymbol index = n.f2.accept(this, argu);
+        TypeSymbol arrayPtr = Symbol.newTemp();
 
-        if(index.type != PrimitiveType.INT){
-            throw new Exception("Array index must be an integer");
-        }
-
+        System.out.printf("\t%s = load i32*, i32** %s\n", arrayPtr, name);
+        checkOutOfBounds(arrayPtr, index);
+        
+        TypeSymbol array = Symbol.newTemp();
         TypeSymbol expr = n.f5.accept(this, argu);
 
-        if(expr.type != PrimitiveType.INT){
-            throw new TypeException(PrimitiveType.INT.typeName, expr.getTypeName());
-            // throw new Exception("Type must be integer");
-        }
 
+        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 %s\n", array, arrayPtr, index);
+        System.out.printf("\tstore i32 %s, i32* %s\n", expr, array);
+
+       
         return null;
     }
 
@@ -434,16 +442,15 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol expr1 = n.f0.accept(this, argu);
         TypeSymbol expr2 = n.f2.accept(this, argu);
 
-        if(expr1.type != PrimitiveType.ARRAY){
-            throw new TypeException(PrimitiveType.ARRAY.typeName, expr1.getTypeName());
-            // throw new Exception("Type must be array");
-        }
+        checkOutOfBounds(expr1, expr2);
 
-        if(expr2.type != PrimitiveType.INT){
-            throw new Exception("Array index must be an integer");
-        }
+        TypeSymbol temp = Symbol.newTemp();
+        TypeSymbol value = Symbol.newTemp();
 
-        return new TypeSymbol(PrimitiveType.INT);
+        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 %s\n", temp, expr1, expr2);
+        System.out.printf("\t%s = load i32, i32* %s\n", value, temp);
+
+        return value;
     }
 
     /**
@@ -457,13 +464,14 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
     public TypeSymbol visit(ArrayLength n, Boolean argu) throws Exception {
         // TODO Auto-generated method stub
         TypeSymbol expr1 = n.f0.accept(this, argu);
+        TypeSymbol temp = Symbol.newTemp();
+        TypeSymbol value = Symbol.newTemp();
 
-        if(expr1.type != PrimitiveType.ARRAY){
-            throw new TypeException(PrimitiveType.ARRAY.typeName, expr1.getTypeName());
-            // throw new Exception("Type must be array");
-        }
+        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", temp, expr1);
+        System.out.printf("\t%s = load i32, i32* %s\n", value, temp);
+        
 
-        return new TypeSymbol(PrimitiveType.INT);
+        return value;
     }
 
     /**
@@ -623,7 +631,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         }
 
         if(type.type == PrimitiveType.IDENTIFIER){
-            symbol = table.lookup(name);
+            symbol = table.lookupField(name);
             if(symbol == null){
                 return type;
             }
@@ -666,11 +674,19 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol expr1 = n.f3.accept(this, argu);
 
-        if(expr1.type != PrimitiveType.INT){
-            throw new Exception("Array index must be an integer");
-        }
+        TypeSymbol tempSize = Symbol.newTemp();
+        TypeSymbol arrTemp = Symbol.newTemp();
+        TypeSymbol arrCast = Symbol.newTemp();
+        TypeSymbol array = Symbol.newTemp();
 
-		return new TypeSymbol(PrimitiveType.ARRAY);
+        System.out.printf("\t%s = add i32 %s, 1\n", tempSize, expr1);
+
+        System.out.printf("\t%s = call i8* @calloc(i32 %s, i32 %d)\n", arrTemp, tempSize, PrimitiveType.INT.getSize());
+        System.out.printf("\t%s = bitcast i8* %s to i32*\n", arrCast, arrTemp);
+        System.out.printf("\tstore i32 %s, i32* %s\n", expr1, arrCast);
+        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 1\n", array, arrCast);
+
+		return array;
 	}
 
     /**
