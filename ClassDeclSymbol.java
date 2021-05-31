@@ -8,10 +8,16 @@ public class ClassDeclSymbol extends Symbol {
     Map<String,Symbol> fields;
     Map<String, Symbol> methods;
 
+    Map<String, Integer> fieldOffset;
+    Map<String, Integer> methodOffset;
+
     public ClassDeclSymbol(String id) {
         super(id, PrimitiveType.IDENTIFIER);
         fields = new LinkedHashMap<String, Symbol>();
         methods = new LinkedHashMap<String, Symbol>();
+
+        fieldOffset = new LinkedHashMap<String, Integer>();
+        methodOffset = new LinkedHashMap<String, Integer>();
         this.size = 0;
     }
 
@@ -20,6 +26,9 @@ public class ClassDeclSymbol extends Symbol {
         this.parentClass = parentClass;
         fields = new LinkedHashMap<String, Symbol>();
         methods = new LinkedHashMap<String, Symbol>();
+
+        fieldOffset = new LinkedHashMap<String, Integer>();
+        methodOffset = new LinkedHashMap<String, Integer>();
         this.size = 0;
     }
 

@@ -33,27 +33,21 @@ public class Main {
 
                 root.accept(generator, false);
                 
-                /* for(Symbol s: symbolTable.peek().values()){
+                for(Symbol s: symbolTable.peek().values()){
                     ClassDeclSymbol classSym = (ClassDeclSymbol)s;
                     int fieldOffset = computeClassSize(classSym.parentClass, symbolTable);
                     int methodOffset = 0;
                     
                     for(Symbol field: classSym.fields.values()){
-                        System.out.println(classSym.id + "." + field.id + ":" + fieldOffset);
+                        classSym.fieldOffset.put(field.id, fieldOffset);
                         fieldOffset += field.type.getSize();
                     }
                     
                     for(Symbol method: classSym.methods.values()){
-                        if(classSym.parentClass != null){
-                            if(!classSym.parentClass.methods.containsKey(method.id)){
-                                System.out.println(classSym.id + "." + method.id + ":" + methodOffset);
-                            }
-                        } else {
-                            System.out.println(classSym.id + "." + method.id + ":" + methodOffset);
-                        }
+                        classSym.methodOffset.put(method.id, methodOffset);
                         methodOffset += method.type.getSize();
                     }
-                } */
+                }
 
                 symbolTable.exit();
                 

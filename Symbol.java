@@ -2,7 +2,7 @@ enum PrimitiveType {
     INT("i32", 4),
     ARRAY("i32*", 8),
     BOOLEAN("i1", 1),
-    IDENTIFIER(8);
+    IDENTIFIER("i8*",8);
 
 
     String typeName;
@@ -73,6 +73,12 @@ public class Symbol {
 
     public static TypeSymbol newLabel(){
         TypeSymbol symbol = new TypeSymbol("L"+labelCount);
+        labelCount++;
+        return symbol;
+    }
+
+    public static TypeSymbol newLabel(String name){
+        TypeSymbol symbol = new TypeSymbol(name+labelCount);
         labelCount++;
         return symbol;
     }
