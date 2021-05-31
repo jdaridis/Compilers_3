@@ -1,4 +1,3 @@
-import java.sql.Types;
 import java.util.Map;
 
 import syntaxtree.AllocationExpression;
@@ -331,15 +330,26 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
     @Override
     public TypeSymbol visit(AndExpression n, Boolean argu) throws Exception {
         // TODO Auto-generated method stub
+        TypeSymbol clause1Label = Symbol.newLabel();
+        TypeSymbol clause2Label = Symbol.newLabel();
+        TypeSymbol nextLabel = Symbol.newLabel();
 
+        TypeSymbol result = Symbol.newTemp();
+
+        System.out.printf("\tbr label %%%s\n", clause1Label);
+        System.out.printf("  %s:\n", clause1Label);
         TypeSymbol clause1 = n.f0.accept(this, argu);
+        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", clause1, clause2Label, nextLabel);
+
+        System.out.printf("  %s:\n", clause2Label);
         TypeSymbol clause2 = n.f2.accept(this, argu);
+        System.out.printf("\tbr label %%%s\n", nextLabel);
 
-        if(clause1.type != PrimitiveType.BOOLEAN || clause2.type != PrimitiveType.BOOLEAN){
-            throw new Exception("Types must be boolean");
-        }
 
-        return new TypeSymbol(PrimitiveType.BOOLEAN);
+        System.out.printf("  %s:\n", nextLabel);
+        System.out.printf("\t%s = phi i1 [%s, %%%s], [%s, %%%s]\n", result, clause1, clause1Label, clause2, clause2Label);
+
+        return result;
     }
 
     /**
