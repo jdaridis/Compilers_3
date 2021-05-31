@@ -1,6 +1,7 @@
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 
 import syntaxtree.Goal;
 
@@ -17,6 +18,11 @@ public class Main {
                 fis = new FileInputStream(args[i]);
                 MiniJavaParser parser = new MiniJavaParser(fis);
 
+                String filename = args[i].split(".java")[0];
+                System.out.println(filename);
+
+                PrintStream outPrintStream = new PrintStream(filename+".ll");
+
                 Goal root = parser.Goal();
 
                 DeclarationsVisitor declarations = new DeclarationsVisitor();
@@ -29,7 +35,7 @@ public class Main {
 
                 root.accept(typeCheck, symbolTable);
 
-                GeneratorVisitor generator = new GeneratorVisitor(symbolTable);
+                GeneratorVisitor generator = new GeneratorVisitor(symbolTable, outPrintStream);
 
                 root.accept(generator, false);
                 

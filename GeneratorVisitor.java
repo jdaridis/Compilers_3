@@ -1,3 +1,4 @@
+import java.io.PrintStream;
 import java.util.Map;
 
 import syntaxtree.AllocationExpression;
@@ -44,9 +45,11 @@ import visitor.GJDepthFirst;
 public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     SymbolTable table;
+    PrintStream outputStream;
 
-    public GeneratorVisitor(SymbolTable table) {
+    public GeneratorVisitor(SymbolTable table, PrintStream outputStream) {
         this.table = table;
+        this.outputStream = outputStream;
     }
 
     
@@ -54,19 +57,19 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
     @Override
     public TypeSymbol visit(Goal n, Boolean argu) throws Exception {
         // TODO Auto-generated method stub
-        System.out.println("declare i8* @calloc(i32, i32)");
-        System.out.println("declare i32 @printf(i8*, ...)");
-        System.out.println("declare void @exit(i32)");
-        System.out.println("@_cint = constant [4 x i8] c\"%d\\0a\\00\"");
-        System.out.println("@_cOOB = constant [15 x i8] c\"Out of bounds\\0a\\00\"");
-        System.out.println();
-        System.out.println("define void @print_int(i32 %i) {\n" +
+        outputStream.println("declare i8* @calloc(i32, i32)");
+        outputStream.println("declare i32 @printf(i8*, ...)");
+        outputStream.println("declare void @exit(i32)");
+        outputStream.println("@_cint = constant [4 x i8] c\"%d\\0a\\00\"");
+        outputStream.println("@_cOOB = constant [15 x i8] c\"Out of bounds\\0a\\00\"");
+        outputStream.println();
+        outputStream.println("define void @print_int(i32 %i) {\n" +
             "\t%_str = bitcast [4 x i8]* @_cint to i8*\n" +
             "\tcall i32 (i8*, ...) @printf(i8* %_str, i32 %i)\n" +
             "\tret void\n" +
         "}");
 
-        System.out.println("define void @throw_oob() {\n" +
+        outputStream.println("define void @throw_oob() {\n" +
             "\t%_str = bitcast [15 x i8]* @_cOOB to i8*\n"+
             "\tcall i32 (i8*, ...) @printf(i8* %_str)\n"+
             "\tcall void @exit(i32 1)\n"+
@@ -104,16 +107,16 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
     public TypeSymbol visit(MainClass n, Boolean argu) throws Exception {
-        System.out.println("define i32 @main() {");
+        outputStream.println("define i32 @main() {");
 
         table.enter();
         super.visit(n, argu);
         table.exit();
-        System.out.println("\tret i32 0");
-        System.out.printf("  OOB_LABEL:\n");
-        System.out.println("\tcall void @throw_oob()");
-        System.out.println("\tunreachable");
-        System.out.println("}");
+        outputStream.println("\tret i32 0");
+        outputStream.printf("  OOB_LABEL:\n");
+        outputStream.println("\tcall void @throw_oob()");
+        outputStream.println("\tunreachable");
+        outputStream.println("}");
         return null;
     }
 
@@ -147,7 +150,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         }
 
 
-        System.out.printf("\t%s = alloca %s\n", name, typeName);
+        outputStream.printf("\t%s = alloca %s\n", name, typeName);
         
 
         return null;
@@ -169,7 +172,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         String expr = n.f2.accept(this, argu).toString();
         String type =  symbol.type.getTypeName();
 
-        System.out.printf("\tstore %s %s, %s* %s\n", type, expr, type, name);
+        outputStream.printf("\tstore %s %s, %s* %s\n", type, expr, type, name);
 
         return null;
     }
@@ -181,13 +184,13 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol inBoundsLabel = Symbol.newLabel();
         
-        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", lengthPtr, name);
-        System.out.printf("\t%s = load i32, i32* %s\n", length, lengthPtr);
+        outputStream.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", lengthPtr, name);
+        outputStream.printf("\t%s = load i32, i32* %s\n", length, lengthPtr);
         
-        System.out.printf("\t%s = icmp slt i32 %s, %s\n", inBounds, index, length);
-        System.out.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", inBounds, inBoundsLabel);
+        outputStream.printf("\t%s = icmp slt i32 %s, %s\n", inBounds, index, length);
+        outputStream.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", inBounds, inBoundsLabel);
         
-        System.out.printf("  %s:\n", inBoundsLabel);
+        outputStream.printf("  %s:\n", inBoundsLabel);
     }
 
     /**
@@ -207,15 +210,15 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol index = n.f2.accept(this, argu);
         TypeSymbol arrayPtr = Symbol.newTemp();
 
-        System.out.printf("\t%s = load i32*, i32** %s\n", arrayPtr, name);
+        outputStream.printf("\t%s = load i32*, i32** %s\n", arrayPtr, name);
         checkOutOfBounds(arrayPtr, index);
         
         TypeSymbol array = Symbol.newTemp();
         TypeSymbol expr = n.f5.accept(this, argu);
 
 
-        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 %s\n", array, arrayPtr, index);
-        System.out.printf("\tstore i32 %s, i32* %s\n", expr, array);
+        outputStream.printf("\t%s = getelementptr i32, i32* %s, i32 %s\n", array, arrayPtr, index);
+        outputStream.printf("\tstore i32 %s, i32* %s\n", expr, array);
 
        
         return null;
@@ -239,17 +242,17 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol next = Symbol.newLabel();
         
         TypeSymbol expression = n.f2.accept(this, argu);
-        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, thenLabel, elseLabel);
+        outputStream.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, thenLabel, elseLabel);
 
-        System.out.printf("  %s:\n", thenLabel);
+        outputStream.printf("  %s:\n", thenLabel);
         n.f4.accept(this, argu);
-        System.out.printf("\tbr label %%%s\n", next);
+        outputStream.printf("\tbr label %%%s\n", next);
 
-        System.out.printf("  %s:\n", elseLabel);
+        outputStream.printf("  %s:\n", elseLabel);
         n.f6.accept(this, argu);
-        System.out.printf("\tbr label %%%s\n", next);
+        outputStream.printf("\tbr label %%%s\n", next);
 
-        System.out.printf("  %s:\n", next);
+        outputStream.printf("  %s:\n", next);
 
         return null;
     }
@@ -269,17 +272,17 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol loopLabel = Symbol.newLabel();
         TypeSymbol next = Symbol.newLabel();
 
-        System.out.printf("\tbr label %%%s\n", condLabel);
-        System.out.printf("  %s:\n", condLabel);
+        outputStream.printf("\tbr label %%%s\n", condLabel);
+        outputStream.printf("  %s:\n", condLabel);
         TypeSymbol expression = n.f2.accept(this, argu);
-        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, loopLabel, next);
+        outputStream.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, loopLabel, next);
         
-        System.out.printf("  %s:\n", loopLabel);
+        outputStream.printf("  %s:\n", loopLabel);
         n.f4.accept(this, argu);
-        System.out.printf("\tbr label %%%s\n", condLabel);
+        outputStream.printf("\tbr label %%%s\n", condLabel);
 
 
-        System.out.printf("  %s:\n", next);
+        outputStream.printf("  %s:\n", next);
 
         return null;
     }
@@ -297,7 +300,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
     public TypeSymbol visit(PrintStatement n, Boolean argu) throws Exception {
         TypeSymbol expression = n.f2.accept(this, argu);
 
-        System.out.printf("\tcall void @print_int(i32 %s)\n", expression);
+        outputStream.printf("\tcall void @print_int(i32 %s)\n", expression);
         return null;
     }
 
@@ -336,18 +339,18 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol result = Symbol.newTemp();
 
-        System.out.printf("\tbr label %%%s\n", clause1Label);
-        System.out.printf("  %s:\n", clause1Label);
+        outputStream.printf("\tbr label %%%s\n", clause1Label);
+        outputStream.printf("  %s:\n", clause1Label);
         TypeSymbol clause1 = n.f0.accept(this, argu);
-        System.out.printf("\tbr i1 %s, label %%%s, label %%%s\n", clause1, clause2Label, nextLabel);
+        outputStream.printf("\tbr i1 %s, label %%%s, label %%%s\n", clause1, clause2Label, nextLabel);
 
-        System.out.printf("  %s:\n", clause2Label);
+        outputStream.printf("  %s:\n", clause2Label);
         TypeSymbol clause2 = n.f2.accept(this, argu);
-        System.out.printf("\tbr label %%%s\n", nextLabel);
+        outputStream.printf("\tbr label %%%s\n", nextLabel);
 
 
-        System.out.printf("  %s:\n", nextLabel);
-        System.out.printf("\t%s = phi i1 [%s, %%%s], [%s, %%%s]\n", result, clause1, clause1Label, clause2, clause2Label);
+        outputStream.printf("  %s:\n", nextLabel);
+        outputStream.printf("\t%s = phi i1 [%s, %%%s], [%s, %%%s]\n", result, clause1, clause1Label, clause2, clause2Label);
 
         return result;
     }
@@ -367,7 +370,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol temp = Symbol.newTemp();
 
-        System.out.printf("\t%s = icmp slt i32 %s, %s\n", temp, expr1, expr2);
+        outputStream.printf("\t%s = icmp slt i32 %s, %s\n", temp, expr1, expr2);
 
         return temp;
     }
@@ -387,7 +390,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol temp = Symbol.newTemp();
 
-        System.out.printf("\t%s = add i32 %s, %s\n", temp, expr1, expr2);
+        outputStream.printf("\t%s = add i32 %s, %s\n", temp, expr1, expr2);
 
 
         return temp;
@@ -408,7 +411,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol temp = Symbol.newTemp();
 
-        System.out.printf("\t%s = sub i32 %s, %s\n", temp, expr1, expr2);
+        outputStream.printf("\t%s = sub i32 %s, %s\n", temp, expr1, expr2);
 
 
         return temp;
@@ -429,7 +432,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol temp = Symbol.newTemp();
 
-        System.out.printf("\t%s = mul i32 %s, %s\n", temp, expr1, expr2);
+        outputStream.printf("\t%s = mul i32 %s, %s\n", temp, expr1, expr2);
 
 
         return temp;
@@ -454,8 +457,8 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol temp = Symbol.newTemp();
         TypeSymbol value = Symbol.newTemp();
 
-        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 %s\n", temp, expr1, expr2);
-        System.out.printf("\t%s = load i32, i32* %s\n", value, temp);
+        outputStream.printf("\t%s = getelementptr i32, i32* %s, i32 %s\n", temp, expr1, expr2);
+        outputStream.printf("\t%s = load i32, i32* %s\n", value, temp);
 
         return value;
     }
@@ -474,8 +477,8 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol temp = Symbol.newTemp();
         TypeSymbol value = Symbol.newTemp();
 
-        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", temp, expr1);
-        System.out.printf("\t%s = load i32, i32* %s\n", value, temp);
+        outputStream.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", temp, expr1);
+        outputStream.printf("\t%s = load i32, i32* %s\n", value, temp);
         
 
         return value;
@@ -606,7 +609,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         TypeSymbol temp = Symbol.newTemp();
 
-        System.out.printf("\t%s = xor i1 %s, true\n", temp, expr1);
+        outputStream.printf("\t%s = xor i1 %s, true\n", temp, expr1);
 
 
         return temp;
@@ -632,7 +635,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         Symbol symbol;
 
 
-        // System.out.println("TypeSymbol " + type + " "+ name);
+        // outputStream.println("TypeSymbol " + type + " "+ name);
         if(name.equals("this")){
             return new TypeSymbol(table.getThis().id);
         }
@@ -649,7 +652,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
                 Symbol temp = Symbol.newTemp();
 
-                System.out.printf("\t%s = load %s, %s* %s\n", temp, strType, strType, name);
+                outputStream.printf("\t%s = load %s, %s* %s\n", temp, strType, strType, name);
 
                 type = (TypeSymbol)temp;
             } 
@@ -677,7 +680,6 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
 	public TypeSymbol visit(ArrayAllocationExpression n, Boolean argu) throws Exception {
-		// TODO Auto-generated method stub
 
         TypeSymbol expr1 = n.f3.accept(this, argu);
 
@@ -686,12 +688,12 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol arrCast = Symbol.newTemp();
         TypeSymbol array = Symbol.newTemp();
 
-        System.out.printf("\t%s = add i32 %s, 1\n", tempSize, expr1);
+        outputStream.printf("\t%s = add i32 %s, 1\n", tempSize, expr1);
 
-        System.out.printf("\t%s = call i8* @calloc(i32 %s, i32 %d)\n", arrTemp, tempSize, PrimitiveType.INT.getSize());
-        System.out.printf("\t%s = bitcast i8* %s to i32*\n", arrCast, arrTemp);
-        System.out.printf("\tstore i32 %s, i32* %s\n", expr1, arrCast);
-        System.out.printf("\t%s = getelementptr i32, i32* %s, i32 1\n", array, arrCast);
+        outputStream.printf("\t%s = call i8* @calloc(i32 %s, i32 %d)\n", arrTemp, tempSize, PrimitiveType.INT.getSize());
+        outputStream.printf("\t%s = bitcast i8* %s to i32*\n", arrCast, arrTemp);
+        outputStream.printf("\tstore i32 %s, i32* %s\n", expr1, arrCast);
+        outputStream.printf("\t%s = getelementptr i32, i32* %s, i32 1\n", array, arrCast);
 
 		return array;
 	}
@@ -908,7 +910,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
     @Override
     public TypeSymbol visit(FormalParameter n, Boolean argu) throws Exception {
         // TODO Auto-generated method stub
-        // System.out.println("Parameter");
+        // outputStream.println("Parameter");
         TypeSymbol type = n.f0.accept(this, argu);
 
         String name = n.f1.accept(this, argu).getTypeName();;
