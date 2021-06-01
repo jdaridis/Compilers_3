@@ -21,6 +21,7 @@ import syntaxtree.ExpressionTail;
 import syntaxtree.ExpressionTerm;
 import syntaxtree.FalseLiteral;
 import syntaxtree.FormalParameter;
+import syntaxtree.FormalParameterTerm;
 import syntaxtree.Goal;
 import syntaxtree.Identifier;
 import syntaxtree.IfStatement;
@@ -145,13 +146,18 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
                 throw new Exception("Type " + typeName + " not defined");
             }
         }
+
+        if(argu){
+            symbol.thisSymbol = table.getThis();
+        }
+
         if(table.insert(name, symbol) != null){
             throw new DuplicateDeclarationException(name);
         }
 
-
-        outputStream.printf("\t%s = alloca %s\n", name, typeName);
-        
+        if(!argu){
+            outputStream.printf("\t%%_%s = alloca %s\n", name, typeName);
+        }       
 
         return null;
     }
@@ -171,6 +177,17 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         String expr = n.f2.accept(this, argu).toString();
         String type =  symbol.type.getTypeName();
+
+        if(symbol.thisSymbol != null){
+            TypeSymbol objectTemp = Symbol.newTemp();
+            TypeSymbol objCast = Symbol.newTemp();
+            int offset = PrimitiveType.IDENTIFIER.getSize() + symbol.thisSymbol.fieldOffset.get(name);
+            outputStream.printf("\t%s = getelementptr i8, i8* %%this, i32 %d\n", objectTemp, offset);
+            outputStream.printf("\t%s = bitcast i8* %s to %s*\n", objCast, objectTemp, type);
+            name = objCast.toString();
+        } else {
+            name = "%_" + name;
+        }
 
         outputStream.printf("\tstore %s %s, %s* %s\n", type, expr, type, name);
 
@@ -210,7 +227,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol index = n.f2.accept(this, argu);
         TypeSymbol arrayPtr = Symbol.newTemp();
 
-        outputStream.printf("\t%s = load i32*, i32** %s\n", arrayPtr, name);
+        outputStream.printf("\t%s = load i32*, i32** %%_%s\n", arrayPtr, name);
         checkOutOfBounds(arrayPtr, index);
         
         TypeSymbol array = Symbol.newTemp();
@@ -646,16 +663,27 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
                 return type;
             }
 
-            if(symbol.type != PrimitiveType.IDENTIFIER){
+            String strType = symbol.type.getTypeName();
+            
+            if(symbol.thisSymbol != null){
+                TypeSymbol objectTemp = Symbol.newTemp();
+                TypeSymbol objCast = Symbol.newTemp();
+                int offset = PrimitiveType.IDENTIFIER.getSize() + symbol.thisSymbol.fieldOffset.get(name);
+                outputStream.printf("\t%s = getelementptr i8, i8* %%this, i32 %d\n", objectTemp, offset);
+                outputStream.printf("\t%s = bitcast i8* %s to %s*\n", objCast, objectTemp, strType);
+                name = objCast.toString();
+            } else {
+                name = "%_" + name;
+            }
+            TypeSymbol temp = Symbol.newTemp();
+            
 
-                String strType = symbol.type.getTypeName();
+            outputStream.printf("\t%s = load %s, %s* %s\n", temp, strType, strType, name);
 
-                Symbol temp = Symbol.newTemp();
+            type = temp;
 
-                outputStream.printf("\t%s = load %s, %s* %s\n", temp, strType, strType, name);
-
-                type = (TypeSymbol)temp;
-            } 
+            // if(symbol.type != PrimitiveType.IDENTIFIER){
+            // } 
             // else {
             //     if(symbol instanceof ClassSymbol){
             //         type = new TypeSymbol(((ClassSymbol)symbol).className);
@@ -750,13 +778,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         table.insertThis(symbol);
         table.enter();
 
-        n.f3.accept(this, argu);
-
-        for(Symbol s: symbol.methods.values()){
-            if(table.lookupType(s.id) != null){
-                throw new Exception("Cannot have method with name of class");
-            }
-        }
+        n.f3.accept(this, true);
 
         table.enter(symbol.methods);
 
@@ -867,14 +889,16 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
             }
         }
 
-
-        n.f2.accept(this, argu).getTypeName();
+        
+        TypeSymbol method =  n.f2.accept(this, argu);
+        outputStream.printf("define %s @%s.%s(i8* %%this", returnTypeName, table.getThis().id, method);
         table.enter();
 
         n.f4.accept(this, argu);
+
+        outputStream.printf(") {\n");
         n.f7.accept(this, argu);
         n.f8.accept(this, argu);
-        
 
         TypeSymbol expressionType = n.f10.accept(this, argu);
 
@@ -895,8 +919,12 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
             
         }
 
+        outputStream.printf("\tret %s %s\n",returnType, expressionType);
+
         
         table.exit();
+
+        outputStream.println("}");
 
         return null;
     }
@@ -913,7 +941,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         // outputStream.println("Parameter");
         TypeSymbol type = n.f0.accept(this, argu);
 
-        String name = n.f1.accept(this, argu).getTypeName();;
+        String name = n.f1.accept(this, argu).getTypeName();
         String typeName = type.getTypeName();
         Symbol symbol;
 
@@ -929,8 +957,9 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         }
         if(table.insert(name, symbol) != null){
             throw new DuplicateDeclarationException(name);
-            // throw new Exception("Duplicate use of name " + name);
         }
+
+        outputStream.printf(", %s %%_%s", type, name);
 
 
         return null;
@@ -975,7 +1004,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
     public TypeSymbol visit(Identifier n, Boolean argu) {
-        return new TypeSymbol("%_" + n.f0.toString());
+        return new TypeSymbol(n.f0.toString());
     }
 
     

@@ -35,10 +35,6 @@ public class Main {
 
                 root.accept(typeCheck, symbolTable);
 
-                GeneratorVisitor generator = new GeneratorVisitor(symbolTable, outPrintStream);
-
-                root.accept(generator, false);
-                
                 for(Symbol s: symbolTable.peek().values()){
                     ClassDeclSymbol classSym = (ClassDeclSymbol)s;
                     int fieldOffset = computeClassSize(classSym.parentClass, symbolTable);
@@ -48,12 +44,18 @@ public class Main {
                         classSym.fieldOffset.put(field.id, fieldOffset);
                         fieldOffset += field.type.getSize();
                     }
+
+                    classSym.size = fieldOffset;
                     
                     for(Symbol method: classSym.methods.values()){
                         classSym.methodOffset.put(method.id, methodOffset);
                         methodOffset += method.type.getSize();
                     }
                 }
+
+                GeneratorVisitor generator = new GeneratorVisitor(symbolTable, outPrintStream);
+
+                root.accept(generator, false);
 
                 symbolTable.exit();
                 

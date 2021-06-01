@@ -51,6 +51,8 @@ public class Symbol {
     String id;
     PrimitiveType type;
     int size;
+    ClassDeclSymbol thisSymbol;
+
     static int tempCount = 0;
     static int labelCount = 0;
     public Symbol(String id, PrimitiveType type) {
