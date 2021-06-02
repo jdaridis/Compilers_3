@@ -145,6 +145,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
             } else {
                 throw new Exception("Type " + typeName + " not defined");
             }
+            typeName = type.type.getTypeName();
         }
 
         if(argu){
@@ -651,12 +652,6 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         String name = type.getTypeName();
         Symbol symbol;
 
-
-        // outputStream.println("TypeSymbol " + type + " "+ name);
-        if(name.equals("this")){
-            return new TypeSymbol(table.getThis().id);
-        }
-
         if(type.type == PrimitiveType.IDENTIFIER){
             symbol = table.lookupField(name);
             if(symbol == null){
@@ -740,12 +735,14 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol type = n.f1.accept(this, argu);
         String typeName = type.getTypeName();
 
-        if(type.type != PrimitiveType.IDENTIFIER){
-            throw new Exception("Cannot instantiate " + typeName);
-        } else if(table.lookupType(typeName) == null){
-            throw new Exception("Type " + typeName + " not defined");
-        }
-		return type;
+        ClassDeclSymbol classDeclSymbol = table.lookupType(typeName);
+        TypeSymbol temp = Symbol.newTemp();
+        int size = PrimitiveType.IDENTIFIER.getSize() + classDeclSymbol.size;
+
+        outputStream.printf("\t%s = call i8* @calloc(i32 1, i32 %d)\n", temp, size);
+        
+        
+		return temp;
 	}
 
     /**
@@ -882,6 +879,8 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol returnType = n.f1.accept(this, argu);
         String returnTypeName = returnType.getTypeName();
         ClassDeclSymbol classSym = null;
+        Map<String, Symbol> args;
+
         if(returnType.type == PrimitiveType.IDENTIFIER){
             classSym = (ClassDeclSymbol)table.lookupType(returnTypeName);
             if(classSym == null){
@@ -895,29 +894,19 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         table.enter();
 
         n.f4.accept(this, argu);
-
+        args = table.peek();
         outputStream.printf(") {\n");
+        for(Symbol symbol: args.values()){
+            outputStream.printf("\t%%_%s = alloca %s\n", symbol.id, symbol.type.typeName);
+            outputStream.printf("\tstore %s %%._%s, %s* %%_%s\n", symbol.type.typeName, symbol.id, symbol.type.typeName, symbol.id);
+            
+        }
+
+
         n.f7.accept(this, argu);
         n.f8.accept(this, argu);
 
         TypeSymbol expressionType = n.f10.accept(this, argu);
-
-        if(expressionType.type != returnType.type){
-            throw new Exception("Return type mismatch. Expected: " + returnType.getTypeName() + " but got: " + expressionType.getTypeName());
-        } else if(expressionType.type == PrimitiveType.IDENTIFIER){
-            ClassDeclSymbol exprClass = table.lookupType(expressionType.getTypeName());
-            ClassSymbol exprSymbol;
-            if(exprClass == null){
-                throw new Exception("Type " + expressionType.getTypeName() + " not defined");
-            } else {
-                exprSymbol = new ClassSymbol("return", exprClass);
-            }
-            
-            if(!exprSymbol.isInstanceOf(classSym)) {
-                throw new Exception("Type " + exprSymbol.className + " not instance of " + classSym.id);
-            }
-            
-        }
 
         outputStream.printf("\tret %s %s\n",returnType, expressionType);
 
@@ -959,7 +948,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
             throw new DuplicateDeclarationException(name);
         }
 
-        outputStream.printf(", %s %%_%s", type, name);
+        outputStream.printf(", %s %%._%s", type, name);
 
 
         return null;
@@ -986,7 +975,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 	@Override
 	public TypeSymbol visit(ThisExpression n, Boolean argu) throws Exception {
 		// TODO Auto-generated method stub
-        return new TypeSymbol(n.f0.toString());
+        return new TypeSymbol("%" + n.f0.toString());
 	}
 
     @Override
