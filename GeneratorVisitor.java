@@ -53,6 +53,52 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         this.outputStream = outputStream;
     }
 
+    void vTableGenerate(ClassDeclSymbol classDeclSymbol, ClassDeclSymbol thisClass){
+        if(classDeclSymbol == null){
+            return;
+        } else {
+            vTableGenerate(classDeclSymbol.parentClass, thisClass);
+            int i = 1;
+            for(Symbol symbol: classDeclSymbol.methods.values()){
+                FunctionSymbol methodSymbol = (FunctionSymbol)symbol;
+                // System.out.println("Method " + methodSymbol.id + " " + methodSymbol.thisSymbol.id);           
+
+                if(classDeclSymbol.parentClass != null){
+                    if(!classDeclSymbol.parentClass.methods.containsKey(symbol.id)){
+                        outputStream.printf("i8* bitcast (%s (i8*", methodSymbol.returnType.type.getTypeName());
+                        for(Symbol arg: methodSymbol.args.values()){
+                            outputStream.printf(", %s", arg.type.getTypeName());
+                        }
+                        outputStream.printf(")* ");
+                        if(thisClass.methods.containsKey(symbol.id)){
+                            outputStream.printf("@%s.%s", thisClass.id, methodSymbol.id);
+                        } else {
+                            outputStream.printf("@%s.%s", classDeclSymbol.id, methodSymbol.id);
+                        }
+                    }
+                } else {
+                    outputStream.printf("i8* bitcast (%s (i8*", methodSymbol.returnType.type.getTypeName());
+                    for(Symbol arg: methodSymbol.args.values()){
+                        outputStream.printf(", %s", arg.type.getTypeName());
+                    }
+                    outputStream.printf(")* ");
+                    if(thisClass.methods.containsKey(symbol.id)){
+                        outputStream.printf("@%s.%s", thisClass.id, methodSymbol.id);
+                    } else {
+                        outputStream.printf("@%s.%s", classDeclSymbol.id, methodSymbol.id);
+                    }
+                }
+                
+                if(i == classDeclSymbol.methods.size()){
+                    outputStream.printf(" to i8*)");
+                } else {
+                    outputStream.printf(" to i8*),");
+                }
+                i++;
+            }
+        }
+    }
+
     
 
     @Override
@@ -76,6 +122,13 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
             "\tcall void @exit(i32 1)\n"+
             "\tret void\n"+
         "}");
+
+        for(Symbol symbol: table.peek().values()){
+            ClassDeclSymbol classDeclSymbol = (ClassDeclSymbol)symbol;
+            outputStream.printf("@.%s_vtable = global [%d x i8*] [", classDeclSymbol.id, classDeclSymbol.methods.size());
+            vTableGenerate(classDeclSymbol, classDeclSymbol);
+            outputStream.printf("]\n");
+        }
         
         
 
@@ -843,7 +896,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         table.enter();
 
-        n.f5.accept(this, argu);
+        n.f5.accept(this, true);
 
         table.enter(symbol.methods);
 

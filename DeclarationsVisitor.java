@@ -336,7 +336,7 @@ public class DeclarationsVisitor extends GJDepthFirst<String, SymbolTable> {
                 throw new DuplicateDeclarationException(methodName);
                 // throw new Exception("Duplicate use of name " + methodName);
             }
-
+            oldMethod.thisSymbol = argu.getThis();
         }
 
         n.f7.accept(this, argu);

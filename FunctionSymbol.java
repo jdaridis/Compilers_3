@@ -6,7 +6,7 @@ import java.util.Map;
 public class FunctionSymbol extends Symbol {
     TypeSymbol returnType;
     Map<String, Symbol> args; //Check this later.
-
+    
     
 
     public FunctionSymbol(String id, TypeSymbol returnType) {
