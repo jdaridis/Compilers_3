@@ -267,6 +267,7 @@ public class DeclarationsVisitor extends GJDepthFirst<String, SymbolTable> {
         argu.insertThis(symbol);
         
         if(parent != null){
+            symbol.fields.putAll(parent.fields);
             parentEnterHelper(parent, argu, symbol.methods);
         }
         // argu.print();

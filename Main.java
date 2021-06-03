@@ -37,7 +37,7 @@ public class Main {
 
                 for(Symbol s: symbolTable.peek().values()){
                     ClassDeclSymbol classSym = (ClassDeclSymbol)s;
-                    int fieldOffset = computeClassSize(classSym.parentClass, symbolTable);
+                    int fieldOffset = 0; // computeClassSize(classSym.parentClass, symbolTable);
                     int methodOffset = 0;
                     
                     for(Symbol field: classSym.fields.values()){
@@ -45,6 +45,7 @@ public class Main {
                         fieldOffset += field.type.getSize();
                     }
 
+                    
                     classSym.size = fieldOffset;
                     
                     for(Symbol method: classSym.methods.values()){

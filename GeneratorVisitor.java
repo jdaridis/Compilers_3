@@ -229,7 +229,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         if(symbol.thisSymbol != null){
             TypeSymbol objectTemp = Symbol.newTemp();
             TypeSymbol objCast = Symbol.newTemp();
-            System.out.println(symbol.thisSymbol.fieldOffset);
+            // System.out.println(symbol.thisSymbol.fieldOffset);
             int offset = PrimitiveType.IDENTIFIER.getSize() + symbol.thisSymbol.fieldOffset.get(name);
             outputStream.printf("\t%s = getelementptr i8, i8* %%this, i32 %d\n", objectTemp, offset);
             outputStream.printf("\t%s = bitcast i8* %s to %s*\n", objCast, objectTemp, type);
@@ -785,10 +785,14 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
         ClassDeclSymbol classDeclSymbol = table.lookupType(typeName);
         TypeSymbol temp = Symbol.newTemp();
+        TypeSymbol cast = Symbol.newTemp();
+        TypeSymbol v_table = Symbol.newTemp();
         int size = PrimitiveType.IDENTIFIER.getSize() + classDeclSymbol.size;
 
         outputStream.printf("\t%s = call i8* @calloc(i32 1, i32 %d)\n", temp, size);
-        
+        outputStream.printf("\t%s = bitcast i8* %s to i8***\n",cast, temp);
+        outputStream.printf("\t%s = getelementptr [%d x i8*], [%d x i8*]* @.%s_vtable, i32 0, i32 0\n", v_table, classDeclSymbol.methods.size(), classDeclSymbol.methods.size(), classDeclSymbol.id);
+        outputStream.printf("\tstore i8** %s, i8*** %s\n", v_table, cast);
         
 		return temp;
 	}
