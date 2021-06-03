@@ -97,7 +97,12 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
     @Override
     public TypeSymbol visit(Goal n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
+        for(Symbol symbol: table.peek().values()){
+            ClassDeclSymbol classDeclSymbol = (ClassDeclSymbol)symbol;
+            outputStream.printf("@.%s_vtable = global [%d x i8*] [", classDeclSymbol.id, classDeclSymbol.methods.size());
+            vTableGenerate(classDeclSymbol, classDeclSymbol);
+            outputStream.printf("]\n");
+        }
         outputStream.println("declare i8* @calloc(i32, i32)");
         outputStream.println("declare i32 @printf(i8*, ...)");
         outputStream.println("declare void @exit(i32)");
@@ -117,12 +122,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
             "\tret void\n"+
         "}");
 
-        for(Symbol symbol: table.peek().values()){
-            ClassDeclSymbol classDeclSymbol = (ClassDeclSymbol)symbol;
-            outputStream.printf("@.%s_vtable = global [%d x i8*] [", classDeclSymbol.id, classDeclSymbol.methods.size());
-            vTableGenerate(classDeclSymbol, classDeclSymbol);
-            outputStream.printf("]\n");
-        }
+        
         
         
 
@@ -725,16 +725,6 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
 
             type = temp;
 
-            // if(symbol.type != PrimitiveType.IDENTIFIER){
-            // } 
-            // else {
-            //     if(symbol instanceof ClassSymbol){
-            //         type = new TypeSymbol(((ClassSymbol)symbol).className);
-            //     } else if(symbol instanceof ClassDeclSymbol){
-            //         type = new TypeSymbol(((ClassDeclSymbol)symbol).id);
-            //     }
-
-            // }
         }
 
         return type;
@@ -964,6 +954,9 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         TypeSymbol expressionType = n.f10.accept(this, argu);
 
         outputStream.printf("\tret %s %s\n",returnType, expressionType);
+        outputStream.printf("  OOB_LABEL:\n");
+        outputStream.println("\tcall void @throw_oob()");
+        outputStream.println("\tunreachable");
 
         
         table.exit();
