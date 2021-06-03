@@ -1,23 +1,27 @@
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class FunctionSymbol extends Symbol {
     TypeSymbol returnType;
     Map<String, Symbol> args; //Check this later.
+    List<ClassDeclSymbol> overrides;
     
     
 
     public FunctionSymbol(String id, TypeSymbol returnType) {
         super(id, PrimitiveType.IDENTIFIER);
         args = new LinkedHashMap<String, Symbol>();
+        overrides = new ArrayList<ClassDeclSymbol>();
         this.returnType = returnType;
     }
 
 
     public FunctionSymbol(String id, TypeSymbol returnType, Map<String, Symbol> args) {
         super(id, PrimitiveType.IDENTIFIER);
+        overrides = new ArrayList<ClassDeclSymbol>();
         this.returnType = returnType;
         this.args = args;
     }
@@ -25,6 +29,7 @@ public class FunctionSymbol extends Symbol {
     public FunctionSymbol(String id, String returnType) {
         super(id, PrimitiveType.IDENTIFIER);
         args = new LinkedHashMap<String, Symbol>();
+        overrides = new ArrayList<ClassDeclSymbol>();
         PrimitiveType type = PrimitiveType.strToPrimitiveType(returnType);
         if(type == PrimitiveType.IDENTIFIER){
             this.returnType = new TypeSymbol(returnType);
@@ -37,6 +42,7 @@ public class FunctionSymbol extends Symbol {
     public FunctionSymbol(String id, String returnType, Map<String, Symbol> args) {
         super(id, PrimitiveType.IDENTIFIER);
         this.args = args;
+        overrides = new ArrayList<ClassDeclSymbol>();
         PrimitiveType type = PrimitiveType.strToPrimitiveType(returnType);
         if(type == PrimitiveType.IDENTIFIER){
             this.returnType = new TypeSymbol(returnType);

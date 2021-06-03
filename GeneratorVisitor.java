@@ -61,40 +61,34 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
             int i = 1;
             for(Symbol symbol: classDeclSymbol.methods.values()){
                 FunctionSymbol methodSymbol = (FunctionSymbol)symbol;
-                // System.out.println("Method " + methodSymbol.id + " " + methodSymbol.thisSymbol.id);           
 
-                if(classDeclSymbol.parentClass != null){
-                    if(!classDeclSymbol.parentClass.methods.containsKey(symbol.id)){
-                        outputStream.printf("i8* bitcast (%s (i8*", methodSymbol.returnType.type.getTypeName());
-                        for(Symbol arg: methodSymbol.args.values()){
-                            outputStream.printf(", %s", arg.type.getTypeName());
-                        }
-                        outputStream.printf(")* ");
-                        if(thisClass.methods.containsKey(symbol.id)){
-                            outputStream.printf("@%s.%s", thisClass.id, methodSymbol.id);
-                        } else {
-                            outputStream.printf("@%s.%s", classDeclSymbol.id, methodSymbol.id);
-                        }
-                    }
-                } else {
-                    outputStream.printf("i8* bitcast (%s (i8*", methodSymbol.returnType.type.getTypeName());
-                    for(Symbol arg: methodSymbol.args.values()){
-                        outputStream.printf(", %s", arg.type.getTypeName());
-                    }
-                    outputStream.printf(")* ");
-                    if(thisClass.methods.containsKey(symbol.id)){
-                        outputStream.printf("@%s.%s", thisClass.id, methodSymbol.id);
-                    } else {
-                        outputStream.printf("@%s.%s", classDeclSymbol.id, methodSymbol.id);
-                    }
+                if(classDeclSymbol.parentClass != null && classDeclSymbol.parentClass.methods.containsKey(symbol.id)){
+                    i++;
+                    continue;
                 }
-                
-                if(i == classDeclSymbol.methods.size()){
-                    outputStream.printf(" to i8*)");
+
+                outputStream.printf("i8* bitcast (%s (i8*", methodSymbol.returnType.type.getTypeName());
+                for(Symbol arg: methodSymbol.args.values()){
+                    outputStream.printf(", %s", arg.type.getTypeName());
+                }
+                outputStream.printf(")* ");
+                if(methodSymbol.overrides.contains(thisClass)){
+                    outputStream.printf("@%s.%s", thisClass.id, methodSymbol.id);
                 } else {
-                    outputStream.printf(" to i8*),");
+                    outputStream.printf("@%s.%s", classDeclSymbol.id, methodSymbol.id);
+                }
+                outputStream.printf(" to i8*)");
+                
+                if(i != classDeclSymbol.methods.size()){
+                    outputStream.printf(", ");
                 }
                 i++;
+            }
+
+            if(classDeclSymbol != thisClass){
+                if(thisClass.parentClass != classDeclSymbol || thisClass.methods.size() != classDeclSymbol.methods.size()){
+                    outputStream.printf(", ");
+                }
             }
         }
     }
@@ -235,6 +229,7 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
         if(symbol.thisSymbol != null){
             TypeSymbol objectTemp = Symbol.newTemp();
             TypeSymbol objCast = Symbol.newTemp();
+            System.out.println(symbol.thisSymbol.fieldOffset);
             int offset = PrimitiveType.IDENTIFIER.getSize() + symbol.thisSymbol.fieldOffset.get(name);
             outputStream.printf("\t%s = getelementptr i8, i8* %%this, i32 %d\n", objectTemp, offset);
             outputStream.printf("\t%s = bitcast i8* %s to %s*\n", objCast, objectTemp, type);
@@ -843,6 +838,9 @@ public class GeneratorVisitor extends GJDepthFirst<TypeSymbol,Boolean>  {
     }
 
     private void parentEnterHelper(ClassDeclSymbol parent, SymbolTable table){
+        for(Symbol s: parent.fields.values()){
+            s.thisSymbol = table.getThis();
+        }
         if(parent.parentClass == null){
             table.enter(parent.fields);
         } else {
