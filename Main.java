@@ -50,7 +50,7 @@ public class Main {
                     
                     for(Symbol method: classSym.methods.values()){
                         classSym.methodOffset.put(method.id, methodOffset);
-                        methodOffset += method.type.getSize();
+                        methodOffset += 1;
                     }
                 }
 
@@ -80,27 +80,5 @@ public class Main {
         
     }
 
-
-    public static int computeClassSize(ClassDeclSymbol symbol, SymbolTable table){
-        int size;
-        if(symbol != null && symbol.size != 0){
-            return symbol.size;
-        } else {
-            if(symbol == null){
-                return 0;
-            } else {
-                size = computeClassSize(symbol.parentClass, table);
-                for(Symbol field: symbol.fields.values()){
-                    size += field.type.getSize();
-                }
-                for(Symbol s: symbol.methods.values()){
-                    size += symbol.size;
-                }
-                symbol.size = size;
-                return size;
-            }
-        }
-        
-    }
 
 }

@@ -96,7 +96,7 @@ public class Symbol {
     @Override
     public String toString() {
         // TODO Auto-generated method stub
-        return id;
+        return this.id;
     }
 
     

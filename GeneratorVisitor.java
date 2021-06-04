@@ -572,7 +572,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         ClassDeclSymbol type;
         FunctionSymbol methodSymbol;
         
-        System.out.println(expression + " " + expression.getClass());
+        // System.out.println(expression + " " + expression.getClass());
         if(expression.id.equals("%this")){
             type = table.getThis();
         } else {
@@ -599,7 +599,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         outputStream.printf("\t%s = load i8**, i8*** %s\n", v_table, temp);
         outputStream.printf("\t%s = getelementptr i8*, i8** %s, i32 %d\n", methodPtr, v_table, type.methodOffset.get(methodName));
         outputStream.printf("\t%s = load i8*, i8** %s\n", method, methodPtr);
-        outputStream.printf("\t%s = bitcast i8* %s to %s (i8*", methodCast, method, methodSymbol.returnType);
+        outputStream.printf("\t%s = bitcast i8* %s to %s (i8*", methodCast, method, methodSymbol.returnType.type.typeName);
 
 
         for(int i=0;i<methodArgs.size();i++){
@@ -607,9 +607,9 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         }
         outputStream.printf(")*\n");
 
-        outputStream.printf("\t%s = call %s %s(i8* %s",ret, methodSymbol.returnType, methodCast, expression.id);
+        outputStream.printf("\t%s = call %s %s(i8* %s",ret, methodSymbol.returnType.type.typeName, methodCast, expression.id);
         for(int i=0;i<methodArgs.size();i++){
-            outputStream.printf(", %s %s", methodArgs.get(i).type.typeName, args.get(i));
+            outputStream.printf(", %s %s", methodArgs.get(i).type.typeName, args.get(i).getName());
         }
         outputStream.printf(")\n");
 
@@ -630,8 +630,8 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     @Override
     public Symbol visit(ExpressionList n, Boolean argu) throws Exception {
         // TODO Auto-generated method stub
-        TypeSymbol arg;
-        arg = (TypeSymbol)n.f0.accept(this, argu);
+        Symbol arg;
+        arg = n.f0.accept(this, argu);
         table.insert("arg0", arg);
         n.f1.accept(this, argu);
         return null;
@@ -646,9 +646,9 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     public Symbol visit(ExpressionTail n, Boolean argu) throws Exception {
         // TODO Auto-generated method stub
         int i = 1;
-        TypeSymbol arg;
+        Symbol arg;
         for(Node node: n.f0.nodes){
-            arg = (TypeSymbol)node.accept(this, argu);
+            arg = node.accept(this, argu);
             table.insert("arg" + i, arg);
             i++;
         }
@@ -718,7 +718,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         Symbol type = n.f0.accept(this, argu);
         String name = type.id;
         Symbol symbol;
-        System.out.println(type);
+        // System.out.println(type);
         if(type.type == PrimitiveType.IDENTIFIER){
             symbol = table.lookupField(name);
             if(symbol == null){
@@ -948,26 +948,23 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     @Override
     public Symbol visit(MethodDeclaration n, Boolean argu) throws Exception {
         TypeSymbol returnType = (TypeSymbol)n.f1.accept(this, argu);
-        String returnTypeName = returnType.getTypeName();
+        String returnTypeName = returnType.type.typeName;
         ClassDeclSymbol classSym = null;
         Map<String, Symbol> args;
-
-        if(returnType.type == PrimitiveType.IDENTIFIER){
-        }
 
         
         TypeSymbol method =  (TypeSymbol)n.f2.accept(this, argu);
         Symbol.resetTemp();
 
-        outputStream.printf("define %s @%s.%s(i8* %%this", returnTypeName, table.getThis().id, method);
+        outputStream.printf("define %s @%s.%s(i8* %%this", returnTypeName, table.getThis().getName(), method);
         table.enter();
 
         n.f4.accept(this, argu);
         args = table.peek();
         outputStream.printf(") {\n");
         for(Symbol symbol: args.values()){
-            outputStream.printf("\t%%_%s = alloca %s\n", symbol.id, symbol.type.typeName);
-            outputStream.printf("\tstore %s %%._%s, %s* %%_%s\n", symbol.type.typeName, symbol.id, symbol.type.typeName, symbol.id);
+            outputStream.printf("\t%%_%s = alloca %s\n", symbol.getName(), symbol.type.getTypeName());
+            outputStream.printf("\tstore %s %%._%s, %s* %%_%s\n", symbol.type.getTypeName(), symbol.getName(), symbol.type.getTypeName(), symbol.getName());
             
         }
 
@@ -975,13 +972,9 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         n.f7.accept(this, argu);
         n.f8.accept(this, argu);
 
-        if(returnType.type == PrimitiveType.IDENTIFIER){
-
-        }
-
         Symbol expressionType = n.f10.accept(this, argu);
 
-        outputStream.printf("\tret %s %s\n",returnType.type.typeName, expressionType.id);
+        outputStream.printf("\tret %s %s\n",returnType.type.getTypeName(), expressionType.getName());
         outputStream.printf("  OOB_LABEL:\n");
         outputStream.println("\tcall void @throw_oob()");
         outputStream.println("\tunreachable");
@@ -1024,8 +1017,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
             throw new DuplicateDeclarationException(name);
         }
 
-        outputStream.printf(", %s %%._%s", type, name);
-
+        outputStream.printf(", %s %%._%s", type.type.getTypeName(), name);
 
         return null;
     }
