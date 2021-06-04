@@ -73,6 +73,10 @@ public class Symbol {
         return symbol;
     }
 
+    public static void resetTemp(){
+        tempCount = 0;
+    }
+
     public static TypeSymbol newLabel(){
         TypeSymbol symbol = new TypeSymbol("L"+labelCount);
         labelCount++;
@@ -92,7 +96,7 @@ public class Symbol {
     @Override
     public String toString() {
         // TODO Auto-generated method stub
-        return type.typeName + " " + id;
+        return id;
     }
 
     
