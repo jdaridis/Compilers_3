@@ -274,11 +274,25 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(ArrayAssignmentStatement n, Boolean argu) throws Exception {
-        TypeSymbol name = (TypeSymbol)n.f0.accept(this, argu);
+        String name = n.f0.accept(this, argu).getName();
         TypeSymbol index = (TypeSymbol)n.f2.accept(this, argu);
         TypeSymbol arrayPtr = Symbol.newTemp();
 
-        outputStream.printf("\t%s = load i32*, i32** %%_%s\n", arrayPtr, name);
+        Symbol symbol = table.lookupField(name);
+
+        if(symbol.thisSymbol != null){
+            TypeSymbol objectTemp = Symbol.newTemp();
+            TypeSymbol objCast = Symbol.newTemp();
+            // System.out.println(symbol.thisSymbol.fieldOffset);
+            int offset = PrimitiveType.IDENTIFIER.getSize() + symbol.thisSymbol.fieldOffset.get(name);
+            outputStream.printf("\t%s = getelementptr i8, i8* %%this, i32 %d\n", objectTemp, offset);
+            outputStream.printf("\t%s = bitcast i8* %s to %s*\n", objCast, objectTemp, symbol.type);
+            name = objCast.toString();
+        } else {
+            name = "%_" + name;
+        }
+
+        outputStream.printf("\t%s = load i32*, i32** %s\n", arrayPtr, name);
         checkOutOfBounds(arrayPtr, index);
         
         TypeSymbol array = Symbol.newTemp();
