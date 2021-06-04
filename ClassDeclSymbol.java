@@ -79,17 +79,17 @@ public class ClassDeclSymbol extends Symbol {
     }
 
 
-    @Override
-    public String toString() {
-        // TODO Auto-generated method stub
-        String ret;
-        if(parentClass != null){
-            ret = id + ":" + parentClass.id + " " + fields.toString() + " " + methods.toString();
-        } else {
-            ret = id + " " + fields.toString() + " " + methods.toString();
-        }
-        return ret;
-    }
+    // @Override
+    // public String toString() {
+    //     // TODO Auto-generated method stub
+    //     String ret;
+    //     if(parentClass != null){
+    //         ret = id + ":" + parentClass.id + " " + fields.toString() + " " + methods.toString();
+    //     } else {
+    //         ret = id + " " + fields.toString() + " " + methods.toString();
+    //     }
+    //     return ret;
+    // }
 
     
 

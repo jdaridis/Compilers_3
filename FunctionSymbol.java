@@ -114,21 +114,21 @@ public class FunctionSymbol extends Symbol {
     }
 
 
-    @Override
-    public String toString() {
-        // TODO Auto-generated method stub
-        String ret;
-        if(args.size() != 0){
-            ret = returnType.getTypeName() + " " + id + "(";
-            for(Symbol s:args.values()){
-                ret += s.toString();
-            }
-            ret += ")";
-        } else {
-            ret = returnType.getTypeName() + " " + id + "()";
-        }
-        return ret;
-    }
+    // @Override
+    // public String toString() {
+    //     // TODO Auto-generated method stub
+    //     String ret;
+    //     if(args.size() != 0){
+    //         ret = returnType.getTypeName() + " " + id + "(";
+    //         for(Symbol s:args.values()){
+    //             ret += s.toString();
+    //         }
+    //         ret += ")";
+    //     } else {
+    //         ret = returnType.getTypeName() + " " + id + "()";
+    //     }
+    //     return ret;
+    // }
 
     
 }

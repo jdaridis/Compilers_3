@@ -58,10 +58,10 @@ public class ClassSymbol extends ClassDeclSymbol {
         }
     }
 
-    @Override
-    public String toString() {
-        // TODO Auto-generated method stub
-        String ret = className + " " + id;
-        return ret;
-    }
+    // @Override
+    // public String toString() {
+    //     // TODO Auto-generated method stub
+    //     String ret = className + " " + id;
+    //     return ret;
+    // }
 }

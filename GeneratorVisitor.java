@@ -67,16 +67,16 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
                     i++;
                     continue;
                 }
-
-                outputStream.printf("i8* bitcast (%s (i8*", methodSymbol.returnType.type.getTypeName());
+                
+                outputStream.printf("i8* bitcast (%s (i8*", methodSymbol.returnType.type);
                 for(Symbol arg: methodSymbol.args.values()){
-                    outputStream.printf(", %s", arg.type.getTypeName());
+                    outputStream.printf(", %s", arg.type);
                 }
                 outputStream.printf(")* ");
                 if(methodSymbol.overrides.contains(thisClass)){
-                    outputStream.printf("@%s.%s", thisClass.id, methodSymbol.id);
+                    outputStream.printf("@%s.%s", thisClass, methodSymbol);
                 } else {
-                    outputStream.printf("@%s.%s", classDeclSymbol.id, methodSymbol.id);
+                    outputStream.printf("@%s.%s", classDeclSymbol, methodSymbol);
                 }
                 outputStream.printf(" to i8*)");
                 
@@ -100,7 +100,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     public Symbol visit(Goal n, Boolean argu) throws Exception {
         for(Symbol symbol: table.peek().values()){
             ClassDeclSymbol classDeclSymbol = (ClassDeclSymbol)symbol;
-            outputStream.printf("@.%s_vtable = global [%d x i8*] [", classDeclSymbol.id, classDeclSymbol.methods.size());
+            outputStream.printf("@.%s_vtable = global [%d x i8*] [", classDeclSymbol, classDeclSymbol.methods.size());
             vTableGenerate(classDeclSymbol, classDeclSymbol);
             outputStream.printf("]\n");
         }
@@ -387,7 +387,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     
     @Override
     public Symbol visit(Expression n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         return n.f0.accept(this, argu);
     }
 
@@ -400,7 +399,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
      */
     @Override
     public Symbol visit(AndExpression n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol clause1Label = Symbol.newLabel();
         TypeSymbol clause2Label = Symbol.newLabel();
         TypeSymbol nextLabel = Symbol.newLabel();
@@ -432,7 +430,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(CompareExpression n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol expr1 = (TypeSymbol)n.f0.accept(this, argu);
         TypeSymbol expr2 = (TypeSymbol)n.f2.accept(this, argu);
 
@@ -452,7 +449,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(PlusExpression n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol expr1 = (TypeSymbol)n.f0.accept(this, argu);
         TypeSymbol expr2 = (TypeSymbol)n.f2.accept(this, argu);
 
@@ -473,7 +469,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(MinusExpression n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol expr1 = (TypeSymbol)n.f0.accept(this, argu);
         TypeSymbol expr2 = (TypeSymbol)n.f2.accept(this, argu);
 
@@ -494,7 +489,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(TimesExpression n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol expr1 = (TypeSymbol)n.f0.accept(this, argu);
         TypeSymbol expr2 = (TypeSymbol)n.f2.accept(this, argu);
 
@@ -516,7 +510,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(ArrayLookup n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol expr1 = (TypeSymbol)n.f0.accept(this, argu);
         TypeSymbol expr2 = (TypeSymbol)n.f2.accept(this, argu);
 
@@ -540,7 +533,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(ArrayLength n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol expr1 = (TypeSymbol)n.f0.accept(this, argu);
         TypeSymbol temp = Symbol.newTemp();
         TypeSymbol value = Symbol.newTemp();
@@ -564,8 +556,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(MessageSend n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
-
         Symbol expression = n.f0.accept(this, argu);
 
         String methodName = ((TypeSymbol)n.f2.accept(this, argu)).getTypeName();
@@ -607,14 +597,14 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         }
         outputStream.printf(")*\n");
 
-        outputStream.printf("\t%s = call %s %s(i8* %s",ret, methodSymbol.returnType.type.typeName, methodCast, expression.id);
+        outputStream.printf("\t%s = call %s %s(i8* %s",ret, methodSymbol.returnType.type, methodCast, expression);
         for(int i=0;i<methodArgs.size();i++){
             outputStream.printf(", %s %s", methodArgs.get(i).type.typeName, args.get(i).getName());
         }
         outputStream.printf(")\n");
 
         if(methodSymbol.returnType.type == PrimitiveType.IDENTIFIER){
-            return new ClassSymbol(ret.id, methodSymbol.returnType.id);
+            return new ClassSymbol(ret.id, methodSymbol.returnType.getName());
         } else {
             return ret;
         }
@@ -629,7 +619,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(ExpressionList n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         Symbol arg;
         arg = n.f0.accept(this, argu);
         table.insert("arg0", arg);
@@ -644,7 +633,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(ExpressionTail n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         int i = 1;
         Symbol arg;
         for(Node node: n.f0.nodes){
@@ -665,7 +653,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(ExpressionTerm n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         return n.f1.accept(this, argu);
     }
 
@@ -677,7 +664,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(Clause n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         return n.f0.accept(this, argu);
     }
 
@@ -689,7 +675,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(NotExpression n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         TypeSymbol expr1 = (TypeSymbol)n.f1.accept(this, argu);
 
         TypeSymbol temp = Symbol.newTemp();
@@ -794,7 +779,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
 	public Symbol visit(AllocationExpression n, Boolean argu) throws Exception {
-		// TODO Auto-generated method stub
         TypeSymbol type = (TypeSymbol)n.f1.accept(this, argu);
         String typeName = type.getTypeName();
 
@@ -821,7 +805,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
      */
     @Override
 	public Symbol visit(BracketExpression n, Boolean argu) throws Exception {
-		// TODO Auto-generated method stub
 		return n.f1.accept(this, argu);
 	}
 
@@ -837,7 +820,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     
     @Override
     public Symbol visit(ClassDeclaration n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         String name = ((TypeSymbol)n.f1.accept(this, argu)).getTypeName();
         ClassDeclSymbol symbol = table.lookupType(name);
         table.insertThis(symbol);
@@ -892,15 +874,10 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(ClassExtendsDeclaration n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
         String className = ((TypeSymbol)n.f1.accept(this, argu)).getTypeName(); 
         String parentName = ((TypeSymbol)n.f3.accept(this, argu)).getTypeName();
 
         ClassDeclSymbol parent = table.lookupType(parentName);
-
-        if(parent == null){
-            throw new Exception("Type " + parentName + " not declared in file");
-        }
 
         ClassDeclSymbol symbol = table.lookupType(className);
 
@@ -949,22 +926,20 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     public Symbol visit(MethodDeclaration n, Boolean argu) throws Exception {
         TypeSymbol returnType = (TypeSymbol)n.f1.accept(this, argu);
         String returnTypeName = returnType.type.typeName;
-        ClassDeclSymbol classSym = null;
         Map<String, Symbol> args;
-
-        
+  
         TypeSymbol method =  (TypeSymbol)n.f2.accept(this, argu);
         Symbol.resetTemp();
 
-        outputStream.printf("define %s @%s.%s(i8* %%this", returnTypeName, table.getThis().getName(), method);
+        outputStream.printf("define %s @%s.%s(i8* %%this", returnTypeName, table.getThis(), method);
         table.enter();
 
         n.f4.accept(this, argu);
         args = table.peek();
         outputStream.printf(") {\n");
         for(Symbol symbol: args.values()){
-            outputStream.printf("\t%%_%s = alloca %s\n", symbol.getName(), symbol.type.getTypeName());
-            outputStream.printf("\tstore %s %%._%s, %s* %%_%s\n", symbol.type.getTypeName(), symbol.getName(), symbol.type.getTypeName(), symbol.getName());
+            outputStream.printf("\t%%_%s = alloca %s\n", symbol, symbol.type);
+            outputStream.printf("\tstore %s %%._%s, %s* %%_%s\n", symbol.type, symbol, symbol.type, symbol);
             
         }
 
@@ -974,7 +949,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
         Symbol expressionType = n.f10.accept(this, argu);
 
-        outputStream.printf("\tret %s %s\n",returnType.type.getTypeName(), expressionType.getName());
+        outputStream.printf("\tret %s %s\n",returnType.type, expressionType);
         outputStream.printf("  OOB_LABEL:\n");
         outputStream.println("\tcall void @throw_oob()");
         outputStream.println("\tunreachable");
@@ -995,8 +970,6 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
      */
     @Override
     public Symbol visit(FormalParameter n, Boolean argu) throws Exception {
-        // TODO Auto-generated method stub
-        // outputStream.println("Parameter");
         TypeSymbol type = (TypeSymbol)n.f0.accept(this, argu);
 
         String name = ((TypeSymbol)n.f1.accept(this, argu)).getTypeName();
@@ -1024,25 +997,21 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     
     @Override
 	public Symbol visit(IntegerLiteral n, Boolean argu) throws Exception {
-		// TODO Auto-generated method stub
 		return new TypeSymbol(n.f0.toString(), PrimitiveType.INT);
 	}
 
 	@Override
 	public Symbol visit(TrueLiteral n, Boolean argu) throws Exception {
-		// TODO Auto-generated method stub
 		return new TypeSymbol("true", PrimitiveType.BOOLEAN);
 	}
 
 	@Override
 	public Symbol visit(FalseLiteral n, Boolean argu) throws Exception {
-		// TODO Auto-generated method stub
 		return new TypeSymbol("false", PrimitiveType.BOOLEAN);
 	}
 
 	@Override
 	public Symbol visit(ThisExpression n, Boolean argu) throws Exception {
-		// TODO Auto-generated method stub
         return new TypeSymbol("%" + n.f0.toString());
 	}
 

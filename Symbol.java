@@ -44,6 +44,12 @@ enum PrimitiveType {
     public int getSize() {
         return size;
     }
+    @Override
+    public String toString() {
+        return typeName;
+    }
+
+    
 
 }
 
