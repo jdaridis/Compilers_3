@@ -18,7 +18,7 @@ public class Main {
                 fis = new FileInputStream(args[i]);
                 MiniJavaParser parser = new MiniJavaParser(fis);
 
-                String filename = args[i].split(".java")[0];
+                String filename = args[i].split("\\.java")[0];
                 System.out.println(filename);
 
                 PrintStream outPrintStream = new PrintStream(filename+".ll");

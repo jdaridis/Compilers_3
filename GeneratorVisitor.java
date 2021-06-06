@@ -59,6 +59,11 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
             return;
         } else {
             vTableGenerate(classDeclSymbol.parentClass, thisClass);
+            if(classDeclSymbol.methods.isEmpty() 
+                || (classDeclSymbol.parentClass != null && classDeclSymbol.methods.size() == classDeclSymbol.parentClass.methods.size())){
+                    return;
+                }
+
             int i = 1;
             for(Symbol symbol: classDeclSymbol.methods.values()){
                 FunctionSymbol methodSymbol = (FunctionSymbol)symbol;
@@ -437,7 +442,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
         TypeSymbol result = Symbol.newTemp();
 
-        outputStream.printf("\tbr label %%%s\n", clause1Label);
+        // outputStream.printf("\tbr label %%%s\n", clause1Label);
         outputStream.println();
         outputStream.printf("  %s:\n", clause1Label);
         TypeSymbol clause1 = (TypeSymbol)n.f0.accept(this, argu);
