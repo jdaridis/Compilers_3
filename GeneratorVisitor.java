@@ -267,16 +267,25 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     void checkOutOfBounds(TypeSymbol name, TypeSymbol index){
         TypeSymbol inBounds = Symbol.newTemp();
+        TypeSymbol positiveBounds = Symbol.newTemp();
         TypeSymbol lengthPtr = Symbol.newTemp();
         TypeSymbol length = Symbol.newTemp();
 
+        TypeSymbol positiveBoundsLabel = Symbol.newLabel();
         TypeSymbol inBoundsLabel = Symbol.newLabel();
         
         outputStream.printf("\t%s = getelementptr i32, i32* %s, i32 -1\n", lengthPtr, name);
         outputStream.printf("\t%s = load i32, i32* %s\n", length, lengthPtr);
         
         outputStream.printf("\t%s = icmp slt i32 %s, %s\n", inBounds, index, length);
-        outputStream.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", inBounds, inBoundsLabel);
+        outputStream.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", inBounds, positiveBoundsLabel);
+        outputStream.println();
+        outputStream.printf("  %s:\n", positiveBoundsLabel);
+        Symbol.setCurrentLabel(positiveBoundsLabel);
+
+        outputStream.printf("\t%s = icmp sle i32 0, %s\n", positiveBounds, index);
+
+        outputStream.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", positiveBounds, inBoundsLabel);
         outputStream.println();
         outputStream.printf("  %s:\n", inBoundsLabel);
         Symbol.setCurrentLabel(inBoundsLabel);
@@ -814,6 +823,15 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         TypeSymbol arrTemp = Symbol.newTemp();
         TypeSymbol arrCast = Symbol.newTemp();
         TypeSymbol array = Symbol.newTemp();
+
+        TypeSymbol positiveBounds = Symbol.newTemp();
+        TypeSymbol inBoundsLabel = Symbol.newLabel();
+
+        outputStream.printf("\t%s = icmp slt i32 0, %s\n", positiveBounds, expr1);
+        outputStream.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", positiveBounds, inBoundsLabel);
+        outputStream.println();
+        outputStream.printf("  %s:\n", inBoundsLabel);
+        Symbol.setCurrentLabel(inBoundsLabel);
 
         outputStream.printf("\t%s = add i32 %s, 1\n", tempSize, expr1);
 
