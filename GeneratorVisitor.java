@@ -1004,6 +1004,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
   
         TypeSymbol method =  (TypeSymbol)n.f2.accept(this, argu);
         Symbol.resetTemp();
+        Symbol.resetLabel();
 
         outputStream.printf("define %s @%s.%s(i8* %%this", returnTypeName, table.getThis(), method);
         table.enter();

@@ -88,6 +88,10 @@ public class Symbol {
         tempCount = 0;
     }
 
+    public static void resetLabel(){
+        labelCount = 0;
+    }
+
     public static TypeSymbol newLabel(){
         TypeSymbol symbol = new TypeSymbol("L"+labelCount);
         labelCount++;
