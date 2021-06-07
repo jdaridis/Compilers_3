@@ -22,7 +22,11 @@ public class TypeSymbol extends Symbol{
         return this.id;
     }
 
-    
+    @Override
+    public boolean equals(Object obj) {
+        // TODO Auto-generated method stub
+        return ((TypeSymbol)obj).id.equals(this.id);
+    }
 
-    
+        
 }

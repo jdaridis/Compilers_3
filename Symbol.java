@@ -61,6 +61,11 @@ public class Symbol {
 
     static int tempCount = 0;
     static int labelCount = 0;
+    static TypeSymbol currentLabel;
+
+    static {
+        currentLabel = new TypeSymbol("L0");
+    }
     public Symbol(String id, PrimitiveType type) {
         this.id = id;
         this.type = type;
@@ -93,6 +98,14 @@ public class Symbol {
         TypeSymbol symbol = new TypeSymbol(name+labelCount);
         labelCount++;
         return symbol;
+    }
+
+    public static TypeSymbol getCurrentLabel(){
+        return currentLabel;
+    }
+
+    public static void setCurrentLabel(TypeSymbol current){
+        currentLabel = current;
     }
     
     public String getName() {

@@ -164,6 +164,9 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     public Symbol visit(MainClass n, Boolean argu) throws Exception {
         outputStream.println("define i32 @main() {");
         Symbol.resetTemp();
+        TypeSymbol entry = Symbol.newLabel();
+        Symbol.setCurrentLabel(entry);
+        outputStream.printf("  %s:\n", entry);
 
         table.enter();
 
@@ -276,6 +279,7 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         outputStream.printf("\tbr i1 %s, label %%%s, label %%OOB_LABEL\n", inBounds, inBoundsLabel);
         outputStream.println();
         outputStream.printf("  %s:\n", inBoundsLabel);
+        Symbol.setCurrentLabel(inBoundsLabel);
     }
 
     /**
@@ -336,25 +340,29 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
 
     @Override
     public Symbol visit(IfStatement n, Boolean argu) throws Exception {
+        TypeSymbol expression = (TypeSymbol)n.f2.accept(this, argu);
+
         TypeSymbol thenLabel = Symbol.newLabel();
         TypeSymbol elseLabel = Symbol.newLabel();
         TypeSymbol next = Symbol.newLabel();
 
-        TypeSymbol expression = (TypeSymbol)n.f2.accept(this, argu);
         outputStream.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, thenLabel, elseLabel);
 
         outputStream.println();
         outputStream.printf("  %s:\n", thenLabel);
+        Symbol.setCurrentLabel(thenLabel);
         n.f4.accept(this, argu);
         outputStream.printf("\tbr label %%%s\n", next);
         
         outputStream.println();
         outputStream.printf("  %s:\n", elseLabel);
+        Symbol.setCurrentLabel(elseLabel);
         n.f6.accept(this, argu);
         outputStream.printf("\tbr label %%%s\n", next);
 
         outputStream.println();
         outputStream.printf("  %s:\n", next);
+        Symbol.setCurrentLabel(next);
         return null;
     }
 
@@ -370,24 +378,27 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
     @Override
     public Symbol visit(WhileStatement n, Boolean argu) throws Exception {
         TypeSymbol condLabel = Symbol.newLabel();
-        TypeSymbol loopLabel = Symbol.newLabel();
-        TypeSymbol next = Symbol.newLabel();
-
+        
         outputStream.printf("\tbr label %%%s\n", condLabel);
         outputStream.println();
         outputStream.printf("  %s:\n", condLabel);
+        Symbol.setCurrentLabel(condLabel);
         TypeSymbol expression = (TypeSymbol)n.f2.accept(this, argu);
+        
+        TypeSymbol loopLabel = Symbol.newLabel();
+        TypeSymbol next = Symbol.newLabel();
         outputStream.printf("\tbr i1 %s, label %%%s, label %%%s\n", expression, loopLabel, next);
         
         outputStream.println();
         outputStream.printf("  %s:\n", loopLabel);
+        Symbol.setCurrentLabel(loopLabel);
         n.f4.accept(this, argu);
         outputStream.printf("\tbr label %%%s\n", condLabel);
 
 
         outputStream.println();
         outputStream.printf("  %s:\n", next);
-
+        Symbol.setCurrentLabel(next);
         return null;
     }
 
@@ -436,26 +447,31 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
      */
     @Override
     public Symbol visit(AndExpression n, Boolean argu) throws Exception {
-        TypeSymbol clause1Label = Symbol.newLabel();
+        
+        TypeSymbol result = Symbol.newTemp();
+        
+        TypeSymbol clause1 = (TypeSymbol)n.f0.accept(this, argu);
+        TypeSymbol clause1Label = Symbol.getCurrentLabel();
+        
         TypeSymbol clause2Label = Symbol.newLabel();
         TypeSymbol nextLabel = Symbol.newLabel();
-
-        TypeSymbol result = Symbol.newTemp();
-
-        // outputStream.printf("\tbr label %%%s\n", clause1Label);
-        outputStream.println();
-        outputStream.printf("  %s:\n", clause1Label);
-        TypeSymbol clause1 = (TypeSymbol)n.f0.accept(this, argu);
         outputStream.printf("\tbr i1 %s, label %%%s, label %%%s\n", clause1, clause2Label, nextLabel);
         
         outputStream.println();
         outputStream.printf("  %s:\n", clause2Label);
+        Symbol.setCurrentLabel(clause2Label);
         TypeSymbol clause2 = (TypeSymbol)n.f2.accept(this, argu);
-        outputStream.printf("\tbr label %%%s\n", nextLabel);
+        TypeSymbol clause2ReturnLabel = Symbol.getCurrentLabel();
+        if(clause2ReturnLabel.equals(nextLabel)){
+            clause2ReturnLabel = clause2Label;
+        }
 
+        outputStream.printf("\tbr label %%%s\n", nextLabel);
+        
         outputStream.println();
         outputStream.printf("  %s:\n", nextLabel);
-        outputStream.printf("\t%s = phi i1 [%s, %%%s], [%s, %%%s]\n", result, clause1, clause1Label, clause2, clause2Label);
+        Symbol.setCurrentLabel(nextLabel);
+        outputStream.printf("\t%s = phi i1 [false, %%%s], [%s, %%%s]\n", result, clause1Label, clause2, clause2ReturnLabel);
         outputStream.println();
 
         return result;
@@ -977,6 +993,9 @@ public class GeneratorVisitor extends GJDepthFirst<Symbol,Boolean>  {
         n.f4.accept(this, argu);
         args = table.peek();
         outputStream.printf(") {\n");
+        TypeSymbol entry = Symbol.newLabel();
+        outputStream.printf("  %s:\n", entry);
+        Symbol.setCurrentLabel(entry);
         for(Symbol symbol: args.values()){
             outputStream.printf("\t%%_%s = alloca %s\n", symbol, symbol.type);
             outputStream.printf("\tstore %s %%._%s, %s* %%_%s\n", symbol.type, symbol, symbol.type, symbol);
