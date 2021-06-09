@@ -681,12 +681,6 @@ public class TypesVisitor extends GJDepthFirst<TypeSymbol,SymbolTable>  {
 
         n.f3.accept(this, argu);
 
-        for(Symbol s: symbol.methods.values()){
-            if(argu.lookupType(s.id) != null){
-                throw new Exception("Cannot have method with name of class");
-            }
-        }
-
         argu.enter(symbol.methods);
 
         n.f4.accept(this, argu);
